@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="classic">
+<head>
+<meta charset="UTF-8">
+<title>himu — home</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="himu site - home">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body data-page="home">
+<canvas id="starfield" aria-hidden="true"></canvas>
+<canvas id="shooting" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="brand">
+    <img src="/assets/blossom.svg" alt="" class="logo" width="56" height="56">
+    <h1 class="site-title"><span class="hash">#</span> <span class="domain">Home</span></h1>
+  </div>
+  <nav class="main-nav" aria-label="Primary">
+        <ul>
+            <li><a href="/" data-nav="/home/" class="active">/home/</a></li>
+            <li><a href="/blog/" data-nav="/blog/" >/blog/</a></li>
+            <li><a href="/about/" data-nav="/about/" >/about/</a></li>
+        </ul>
+    </nav>
+</header>
+<main class="content narrow">
+
+    <ul class="home-links">
+      <li><a href="/about/"><span class="arrow">›</span> About Me</a></li>
+      <li><a href="/blog/"><span class="arrow">›</span> Blog</a></li>
+    </ul>
+  
+</main>
+<script defer src="/js/starfield.js"></script>
+</body>
+</html>

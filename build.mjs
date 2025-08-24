@@ -25,7 +25,7 @@ const __root = process.cwd();
 const DIST = path.join(__root, 'dist');
 const NOTES_DIR = path.join(__root, 'notes');
 const PUBLIC_DIR = path.join(__root, 'public');
-const SRC_CSS = path.join(__root, 'src', 'css');
+const CSS_DIR = path.join(__root, 'css');
 const JS_DIR = path.join(__root, 'js');
 const SITE_BASE = (process.argv.find(a => a.startsWith('--base=')) || '').split('=')[1] || ''; // e.g. /myrepo
 const WATCH = process.argv.includes('--watch');
@@ -61,7 +61,7 @@ const sanitizeSlug = (s) =>
 
 /* ---------- Templates ---------- */
 import layout from './src/templates/layout.js';
-import { nav } from './src/templates/components.js';
+import { nav } from './src/templates/component.js';
 
 /* ---------- Markdown / Content Processing ---------- */
 function collectNotes() {
@@ -109,7 +109,7 @@ function buildSite() {
   ensureDir(DIST);
 
   copyTree(PUBLIC_DIR, path.join(DIST));
-  copyTree(SRC_CSS, path.join(DIST, 'css'));
+  copyTree(CSS_DIR, path.join(DIST, 'css'));
   copyTree(JS_DIR, path.join(DIST, 'js'));
   // Copy attachments (if any)
   copyTree(path.join(NOTES_DIR, 'attachments'), path.join(DIST, 'attachments'));
@@ -189,6 +189,9 @@ function buildSite() {
           headingOverride: p.title
         })
     );
+
+    // Also copy the markdown file for client-side loading
+    write(path.join(DIST, 'content', 'posts', `${p.slug}.md`), p.content);
   });
 
   console.log(`✔ Build complete: ${posts.length} posts`);
@@ -199,7 +202,7 @@ buildSite();
 /* ---------- Watch / Serve ---------- */
 if (WATCH) {
   console.log('• Watching notes for changes...');
-  chokidar.watch([NOTES_DIR, SRC_CSS, JS_DIR, PUBLIC_DIR], {
+  chokidar.watch([NOTES_DIR, CSS_DIR, JS_DIR, PUBLIC_DIR], {
     ignoreInitial: true
   }).on('all', (evt, file) => {
     console.log(`↻ Change (${evt}): ${path.relative(__root, file)}`);
