@@ -1,0 +1,22 @@
+[
+  {
+    "slug": "piccolo-a-stackless-lua-interpreter",
+    "title": "Piccolo — A Stackless Lua Interpreter",
+    "date": "2024-05-01"
+  },
+  {
+    "slug": "techniques-for-safe-gc-in-rust",
+    "title": "Techniques for Safe Garbage Collection in Rust",
+    "date": "2024-01-13"
+  },
+  {
+    "slug": "another-try-at-a-public-face",
+    "title": "Another Try at a Public Face",
+    "date": "2023-12-11"
+  },
+  {
+    "slug": "rustconf-2018-closing-keynote",
+    "title": "My RustConf 2018 Closing Keynote",
+    "date": "2018-09-14"
+  }
+]

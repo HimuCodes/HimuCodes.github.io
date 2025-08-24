@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title id="postTitle">himu — post</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="Blog post">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="post">
+<canvas id="starfield" aria-hidden="true"></canvas>
+<canvas id="shooting" aria-hidden="true"></canvas>
+
+<header class="site-header">
+    <div class="brand">
+        <img src="assets/blossom.svg" alt="" class="logo" width="56" height="56">
+        <h1 class="site-title"><span class="hash">#</span> <span class="domain" id="postHeading">Post</span></h1>
+    </div>
+    <nav class="main-nav" aria-label="Primary">
+        <ul>
+            <li><a href="/index.html" data-nav="/home/">/home/</a></li>
+            <li><a href="/blog/" data-nav="/blog/">/blog/</a></li>
+            <li><a href="/about.html" data-nav="/about/">/about/</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main class="content readable">
+    <article id="postContainer" class="markdown">
+        <p class="loading">Loading post...</p>
+    </article>
+    <nav class="post-nav">
+        <a href="/blog/">&larr; Back to Blog</a>
+    </nav>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" integrity="sha256-tPIYOvTo95OfzmiEJeZVrDCTnhgypKekJy5o+1OtS9s=" crossorigin="anonymous"></script>
+<script src="js/starfield.js" defer></script>
+<script src="js/site.js" defer></script>
+</body>
+</html>
