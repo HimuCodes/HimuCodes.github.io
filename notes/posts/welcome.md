@@ -5,7 +5,6 @@ publish: true
 tags: ["welcome", "blog"]
 ---
 
-# Welcome to My Blog
 
 This is my first blog post! I'll be sharing thoughts about programming, technology, and whatever else catches my interest.
 

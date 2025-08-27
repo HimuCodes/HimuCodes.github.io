@@ -2,7 +2,7 @@ name: Deploy GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   workflow_dispatch:
 
 permissions:
@@ -26,8 +26,14 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Pre-generate OG images (optional)
+        run: npm run og
+
+      - name: Run tests (validation, feeds, incremental)
+        run: npm test
+
+      - name: Production build (strict links)
+        run: npm run build -- --strict-links
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

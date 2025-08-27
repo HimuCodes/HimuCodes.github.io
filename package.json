@@ -6,16 +6,29 @@
   "scripts": {
     "build": "node build.mjs",
     "dev": "node build.mjs --watch --serve",
-    "clean": "rm -rf dist"
+    "watch": "node build.mjs --watch --drafts",
+    "sync": "node build.mjs --watch --drafts --future --strict-links",
+    "sync:push": "node scripts/auto-sync.mjs",
+    "new": "node scripts/new-post.mjs",
+    "new:interactive": "node scripts/new-post-interactive.mjs",
+    "og": "node scripts/og.mjs",
+    "build:all": "npm run og && npm run build",
+    "clean": "rm -rf dist",
+    "test": "node tests/test.js && node tests/obsidian-watch.test.js",
+    "obsidian:watch": "node scripts/obsidian-watch.mjs"
   },
   "dependencies": {
+    "chokidar": "^3.6.0",
+    "csso": "^5.0.5",
+    "esbuild": "^0.23.0",
+    "fast-glob": "^3.3.2",
+    "finalhandler": "^1.2.0",
     "gray-matter": "^4.0.3",
     "marked": "^12.0.2",
-    "slugify": "^1.6.6",
-    "fast-glob": "^3.3.2",
-    "chokidar": "^3.6.0",
-    "tiny-glob": "^0.2.9",
+    "mime": "^3.0.0",
     "serve-static": "^1.15.0",
-    "mime": "^3.0.0"
+    "sharp": "^0.33.4",
+    "slugify": "^1.6.6",
+    "shiki": "^1.14.1"
   }
 }
