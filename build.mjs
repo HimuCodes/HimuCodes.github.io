@@ -67,22 +67,14 @@ const hashContent = buf => crypto.createHash('sha256').update(buf).digest('hex')
 
 /* ---------- Footnotes + Markdown Processing ---------- */
 function preprocessMarkdown(raw){
-  // collect footnote definitions [^id]: text
   const lines = raw.split(/\r?\n/);
-  const footnotes = {};
-  const remainder = [];
-  const defRe = /^\[\^(.+?)]:\s*(.*)$/;
-  lines.forEach(l => {
-    const m = l.match(defRe);
-    if (m) { footnotes[m[1]] = m[2].trim(); } else remainder.push(l); });
+  const footnotes = {}; const remainder = [];
+  const defRe = /^\[\^(.+?)\]:\s*(.*)$/; // correct footnote def pattern
+  lines.forEach(l=>{ const m=l.match(defRe); if(m){ footnotes[m[1]]=m[2].trim(); } else remainder.push(l); });
   let content = remainder.join('\n');
-  const order = [];
-  content = content.replace(/\[\^(.+?)\]/g, (_, id) => {
-    if (!order.includes(id)) order.push(id);
-    const idx = order.indexOf(id) + 1;
-    return `<button type="button" class="fn-ref" data-fn="${id}" aria-expanded="false">[${idx}]</button>`;
-  });
-  return { content, footnotes };
+  const order=[];
+  content = content.replace(/\[\^(.+?)\]/g, (_, id)=>{ if(!order.includes(id)) order.push(id); const idx = order.indexOf(id)+1; return `<button type="button" class="fn-ref" id="fnref-${id}" data-fn="${id}" aria-expanded="false">[${idx}]</button>`; });
+  return { content, footnotes, order };
 }
 
 let _cachedHighlighter = null;
@@ -93,23 +85,20 @@ async function ensureHighlighter(){
 }
 
 function renderMarkdownWithExtrasSync(md){
-  // uses already initialized _cachedHighlighter
-  const { content, footnotes } = preprocessMarkdown(md);
+  const { content, footnotes, order } = preprocessMarkdown(md);
   const renderer = new marked.Renderer();
   const highlighter = _cachedHighlighter;
   renderer.code = (code, infostring) => {
     let lang = (infostring||'').split(/\s+/)[0] || 'text';
     const alias = { js:'javascript', jsx:'javascript', ts:'typescript', tsx:'typescript', sh:'bash', shell:'bash', bash:'bash', cjs:'javascript', mjs:'javascript', json5:'json' };
-    const origLang = lang.toLowerCase();
-    if (alias[origLang]) lang = alias[origLang];
-    if (highlighter){
-      try { return highlighter.codeToHtml(code, { lang, theme: 'github-dark-default' }); } catch {}
-    }
+    const origLang = lang.toLowerCase(); if(alias[origLang]) lang = alias[origLang];
+    if (highlighter){ try { return highlighter.codeToHtml(code, { lang, theme:'github-dark-default' }); } catch {} }
     return `<pre><code>${escapeHtml(code)}</code></pre>`;
   };
   const html = marked.parse(content, { mangle:false, headerIds:true, renderer });
-  const footHtml = Object.keys(footnotes).length ? `<div class="footnote-defs" hidden>${Object.entries(footnotes).map(([id, txt]) => `<div data-fn-def="${id}">${escapeHtml(txt)}</div>`).join('')}</div>` : '';
-  return html + footHtml;
+  const hiddenDefs = Object.keys(footnotes).length ? `<div class="footnote-defs" hidden>${Object.entries(footnotes).map(([id,txt])=>`<div data-fn-def="${id}">${escapeHtml(txt)}</div>`).join('')}</div>`: '';
+  const footList = order && order.length ? `<section class="footnotes"><ol>${order.map(id=> `<li id="fn-${id}">${escapeHtml(footnotes[id]||'')} <a href="#fnref-${id}" class="fn-back" aria-label="Back to reference">↩</a></li>`).join('')}</ol></section>`: '';
+  return html + hiddenDefs + footList;
 }
 
 /* ---------- Content Collection ---------- */
@@ -125,14 +114,18 @@ function collectNotes(){
     const baseName = path.basename(rel).toLowerCase();
     const tags = Array.isArray(fm.tags) ? fm.tags.map(t=>String(t).toLowerCase()) : (typeof fm.tags === 'string'? fm.tags.split(/[, ]+/).map(t=>t.toLowerCase()):[]);
     const isAbout = fm.publishAbout === true || (baseName === 'about.md' && fm.publishAbout !== false);
-    // New: default publish unless explicitly publish:false (still allow tag publish etc.)
     const explicitPublishFlag = fm.publish;
-    const shouldPublish = isAbout || explicitPublishFlag !== false; // only skip if publish:false
+    const shouldPublish = isAbout || explicitPublishFlag !== false;
     if (!shouldPublish) return;
     const isDraft = fm.draft === true;
     if (isDraft && !DRAFTS) return;
     const title = fm.title || rel.replace(/\.md$/, '');
-    const date = fm.date || now;
+    let dateRaw = fm.date || now;
+    if (dateRaw instanceof Date) dateRaw = dateRaw.toISOString().slice(0,10);
+    let date = String(dateRaw).slice(0,10);
+    if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) { // fallback if malformed
+      try { date = new Date(dateRaw).toISOString().slice(0,10); } catch { date = now; }
+    }
     if (!FUTURE && date > now) return;
     const slug = isAbout ? 'about' : (fm.slug ? sanitizeSlug(fm.slug) : sanitizeSlug(title));
     const excerpt = (fm.excerpt || content.split('\n').find(l=>l.trim()) || '').slice(0, 240).trim();
@@ -339,11 +332,16 @@ async function buildSite(){
       const newAttrs = attrs + ` id="${id}"`;
       return `<h${level}${newAttrs}>${inner}</h${level}>`;
     });
-    // Only build TOC from h2/h3 (need >=2 entries excluding first top heading if any)
-    const filtered = headingMatches.filter(h => h.level === '2' || h.level === '3');
-    let tocHtml = '';
-    if (filtered.length >= 2){
-      tocHtml = `<nav class="toc"><div class="toc-title">Contents</div><ul>` + filtered.map(h=> `<li class="lvl${h.level}"><a href="#${h.id}">${h.text}</a></li>`).join('') + '</ul></nav>';
+    // Build hierarchical TOC structure (h2 + nested h3) -> breadcrumb arrow styled
+    const filtered = headingMatches.filter(h=> h.level==='2' || h.level==='3');
+    let tocHtml='';
+    if (filtered.length>=2){
+      const groups=[]; let current=null;
+      filtered.forEach(h=>{ if(h.level==='2'){ current={ h, children:[] }; groups.push(current); } else if (h.level==='3' && current){ current.children.push(h); } });
+      tocHtml = `<nav class="toc" style="color:var(--link)"><ul class="toc-list">` + groups.map(g=>{
+        const childHtml = g.children.length? `<ul class="toc-sub">${g.children.map(c=> `<li class="toc-item toc-lvl3" style="color:var(--link)"><a href="#${c.id}" style="color:var(--link)">${c.text}</a></li>`).join('')}</ul>`: '';
+        return `<li class="toc-item toc-lvl2" style="color:var(--link)"><a href="#${g.h.id}" style="color:var(--link)">${g.h.text}</a>${childHtml}</li>`;
+      }).join('') + '</ul></nav>';
     }
     const schema = { '@context':'https://schema.org', '@type':'Article', headline:p.title, datePublished:p.date, dateModified: p.lastMod || p.date, wordCount:p.wordCount, author:{ '@type':'Person', name:'himu' } };
     const ogRelPromise = ensureOgImage(p.slug, p.title);

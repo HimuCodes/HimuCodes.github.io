@@ -37,6 +37,10 @@ ensureSampleImage();
 const multiPost = path.join(root,'notes','posts','__multi-test.md');
 fs.writeFileSync(multiPost, `---\ntitle: Multi Feature Test\ndate: 2025-08-02\ntags: ['multi','ci']\n---\n# Multi Feature Test\n\nIntro paragraph.\n\n## Section One\nSome text.\n\n### Subsection A\nMore text.\n\n## Section Two\nCode sample:\n\n\`\`\`js\nconsole.log('hi');\n\`\`\`\n\nImage below:\n\n![Alt text](/test-sample.png)\n`);
 
+// 1c. Footnote demo post
+const footnoteNote = path.join(root,'notes','posts','__footnote-demo.md');
+fs.writeFileSync(footnoteNote, `---\ntitle: Footnote Demo\ndate: 2025-08-03\n---\n# Footnote Demo\n\nSome text with a footnote[^a] and second[^b].\n\n[^a]: First footnote\n[^b]: Second footnote\n`);
+
 // 2. Initial build (exclude draft)
 run('node build.mjs');
 
@@ -71,6 +75,16 @@ const multiHtml = fs.readFileSync(multiHtmlPath,'utf8');
 assert.ok(/<nav class="toc"/.test(multiHtml), 'TOC missing in multi-feature post');
 assert.ok(/class="shiki/.test(multiHtml), 'Shiki highlighting missing');
 assert.ok(/<picture>/.test(multiHtml), 'Responsive <picture> not injected for image');
+
+// 3e. Footnotes rendering checks
+const footSlug = 'footnote-demo';
+const footHtmlPath = path.join(dist,'blog', footSlug, 'index.html');
+assert.ok(fs.existsSync(footHtmlPath), 'footnote demo post missing');
+const footHtml = fs.readFileSync(footHtmlPath,'utf8');
+assert.ok(/<section class="footnotes">/.test(footHtml), 'footnotes section missing');
+assert.ok(/id="fn-a"/.test(footHtml), 'footnote a list item missing');
+assert.ok(/href="#fnref-a"/.test(footHtml), 'back reference link for footnote a missing');
+assert.ok(/id="fnref-a"/.test(footHtml), 'footnote reference button id missing');
 
 // 4. Incremental build test (no content change)
 const somePost = postsJson[0];

@@ -1,19 +1,5 @@
 [
   {
-    "slug": "multi-feature-test",
-    "title": "Multi Feature Test",
-    "date": "2025-08-02T00:00:00.000Z",
-    "excerpt": "# Multi Feature Test",
-    "tags": [
-      "multi",
-      "ci"
-    ],
-    "readingTimeMin": 1,
-    "wordCount": 28,
-    "draft": false,
-    "pathRel": "posts/__multi-test.md"
-  },
-  {
     "slug": "test-post-from-script",
     "title": "Test Post From Script",
     "date": "2025-08-27",
@@ -37,6 +23,31 @@
     "wordCount": 1034,
     "draft": false,
     "pathRel": "posts/Why I Build Weird Things.md"
+  },
+  {
+    "slug": "footnote-demo",
+    "title": "Footnote Demo",
+    "date": "2025-08-03",
+    "excerpt": "# Footnote Demo",
+    "tags": [],
+    "readingTimeMin": 1,
+    "wordCount": 16,
+    "draft": false,
+    "pathRel": "posts/__footnote-demo.md"
+  },
+  {
+    "slug": "multi-feature-test",
+    "title": "Multi Feature Test",
+    "date": "2025-08-02",
+    "excerpt": "# Multi Feature Test",
+    "tags": [
+      "multi",
+      "ci"
+    ],
+    "readingTimeMin": 1,
+    "wordCount": 28,
+    "draft": false,
+    "pathRel": "posts/__multi-test.md"
   },
   {
     "slug": "welcome-to-my-blog",

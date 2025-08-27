@@ -357,10 +357,27 @@ body.is-post .site-header { padding-top: 2rem; }
   -webkit-text-fill-color: transparent; /* Safari */
 }
 
-.toc { border:1px solid var(--border); background:#1a1826; padding:.9rem 1rem; border-radius:8px; font-size:.72rem; line-height:1.4; margin:1.2rem 0 1.8rem; }
-.toc-title { font-size:.65rem; letter-spacing:.14em; text-transform:uppercase; opacity:.8; margin-bottom:.4rem; }
-.toc ul { list-style:none; margin:0; padding:0; }
-.toc li { margin:.25rem 0; }
-.toc li.lvl3 { margin-left:.75rem; }
-.toc a { color:var(--text-dim); text-decoration:none; }
-.toc a:hover { color:#fff; text-decoration:underline; }
+.toc { border:none; background:transparent !important; padding:0; margin:1.2rem 0 1.2rem; color: var(--link); }
+.toc-title { display:none; }
+.toc-list { list-style:none; margin:0; padding:0; }
+.toc-item { position:relative; padding-left:18px; margin:.25rem 0; color: var(--link); }
+.toc-item::before { content:'›'; position:absolute; left:0; color: var(--link); }
+.toc-sub { margin-left:16px; list-style:none; padding:0; }
+.toc-item > a { color: var(--link); text-decoration:none; display:inline-block; padding:.1rem .25rem; border-radius:6px; transition: color var(--transition); background:transparent !important; }
+.toc-item > a:hover { background:transparent !important; color: var(--link-hover); text-decoration:underline; }
+
+/* Footnotes list */
+.footnotes { margin:2.4rem 0 1rem; padding-top:1rem; border-top:1px solid #2a273b; font-size:.68rem; line-height:1.4; }
+.footnotes ol { margin:0 0 0 1.1rem; padding:0; }
+.footnotes li { margin:.45rem 0; }
+.fn-back { margin-left:.35rem; text-decoration:none; font-size:.7em; color: var(--accent1); }
+.fn-back:hover { text-decoration:underline; }
+
+/* TOC force override to ensure blue takes effect */
+.toc, .toc-item, .toc-item > a { color: var(--link) !important; }
+.toc-item::before { color: var(--link) !important; }
+.toc-item > a:hover { color: var(--link-hover) !important; }
+.toc-item > a:link,
+.toc-item > a:visited,
+.toc-item > a:active,
+.toc-item > a:focus { color: var(--link) !important; }
