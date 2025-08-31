@@ -11,8 +11,8 @@
     --accent2: #7d2bff;
     --border: #27263a;
     --radius: 6px;
-    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
-    --sans: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
+    --mono: "JetBrains Mono", "Consolas", monospace;
+    --sans: "Consolas", "JetBrains Mono", monospace, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji";
     --max-width: 880px;
     --transition: 180ms cubic-bezier(.4,.2,.2,1);
 }
@@ -38,7 +38,14 @@ a:hover, a:focus-visible { color: var(--link-hover); text-decoration:underline; 
     max-width: var(--max-width);
     margin:0 auto;
 }
-.brand { display:flex; align-items:center; gap: .95rem; max-width: 65%; }
+.brand {
+    display:flex;
+    align-items:center;
+    gap:.95rem;
+    flex:1 1 auto;
+    max-width:100%;
+    min-width:0;
+}
 .logo { display:block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); flex-shrink: 0; }
 .site-title {
     font-family: var(--mono);
@@ -49,7 +56,8 @@ a:hover, a:focus-visible { color: var(--link-hover); text-decoration:underline; 
     display:flex;
     align-items:center;
     gap:.4rem;
-    min-width: 0; /* Allow flex shrinking */
+    flex:1 1 auto;
+    min-width:0;
 }
 .site-title .hash {
     /* Gradient (no glow) for the leading hash */
@@ -63,15 +71,18 @@ a:hover, a:focus-visible { color: var(--link-hover); text-decoration:underline; 
     text-shadow:none;
 }
 .site-title .domain {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
+    overflow:visible;
+    text-overflow:clip;
+    white-space:normal;
+    display:inline;
+    overflow-wrap:anywhere;
+    word-break:break-word;
     color: #ffffff; /* Keep title white */
 }
 
 .main-nav {
-    flex-shrink: 0; /* Prevent nav from shrinking */
+    flex:0 0 auto;
+    max-width:100%;
 }
 
 .main-nav ul {
@@ -106,7 +117,6 @@ a:hover, a:focus-visible { color: var(--link-hover); text-decoration:underline; 
     margin: 0 auto;
     padding: 0 clamp(1rem,2vw,2rem) 4rem;
     min-height:calc(100dvh - 100px);
-    font-family: var(--mono);
     line-height:1.52;
     font-size: 15px;
 }
@@ -141,6 +151,12 @@ a:hover, a:focus-visible { color: var(--link-hover); text-decoration:underline; 
 .markdown h1 .hash, .markdown h2 .hash {
     color: var(--accent1);
 }
+
+/* Add global heading size scale (markdown semantic) */
+.markdown h1 { font-size: clamp(2rem, 5vw, 2.6rem); }
+.markdown h2 { font-size: clamp(1.55rem, 3.2vw, 1.9rem); }
+.markdown h3 { font-size: clamp(1.25rem, 2.2vw, 1.35rem); }
+.markdown h4 { font-size: 1.05rem; }
 
 /* Anchor link */
 .markdown a.anchor {
@@ -193,6 +209,18 @@ pre.has-copy { position:relative; }
     border-radius:4px;
     font-size:.85em;
     border:1px solid #2a2940;
+    font-family: var(--mono);
+}
+/* Ensure blockquotes and other typographic elements use main sans stack */
+/* Consolidated blockquote styles */
+.markdown blockquote {
+    font-family: var(--sans);
+    border-left:3px solid var(--accent1);
+    margin:1.2rem 0;
+    padding:.3rem .9rem;
+    color: var(--text-dim);
+    background:#1a1926;
+    border-radius:4px;
 }
 
 .markdown pre {
@@ -203,15 +231,6 @@ pre.has-copy { position:relative; }
     border:1px solid #2b2a42;
     font-size:.85rem;
     line-height:1.4;
-}
-
-.markdown blockquote {
-    border-left:3px solid var(--accent1);
-    margin:1.2rem 0;
-    padding:.3rem .9rem;
-    color: var(--text-dim);
-    background:#1a1926;
-    border-radius:4px;
 }
 
 .angled {
@@ -381,3 +400,6 @@ body.is-post .site-header { padding-top: 2rem; }
 .toc-item > a:visited,
 .toc-item > a:active,
 .toc-item > a:focus { color: var(--link) !important; }
+
+/* About page typography adjustments */
+body[data-page="about"] .markdown p, body[data-page="about"] .markdown li { font-size:16px; line-height:1.6; }

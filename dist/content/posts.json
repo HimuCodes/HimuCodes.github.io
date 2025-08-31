@@ -2,7 +2,7 @@
   {
     "slug": "test-post-from-script",
     "title": "Test Post From Script",
-    "date": "2025-08-27",
+    "date": "2025-08-31",
     "excerpt": "# Test Post From Script",
     "tags": [
       "ci",
@@ -16,13 +16,38 @@
   {
     "slug": "why-i-build-weird-things",
     "title": "Why I Build Weird Things (and Why Building Stuff You Find Cool Matters)",
-    "date": "2025-08-25",
-    "excerpt": "I've always had a soft spot for the useless, the oddly specific, and the \"no one asked for this but I did it anyway\" kind of projects. If you looked at my desk right now, you'd see a scatter of microcontrollers, a SIM card collection that l",
+    "date": "2025-08-31",
+    "excerpt": "I've always had a soft spot for the useless, the oddly specific, and the \"no one asked for this but I did it anyway\" kind of projects. If you looked at my desk right now, you'd see a scatter of microcontrollers, a plethora of random stuff l",
     "tags": [],
-    "readingTimeMin": 5,
-    "wordCount": 1034,
+    "readingTimeMin": 6,
+    "wordCount": 1191,
     "draft": false,
     "pathRel": "posts/Why I Build Weird Things.md"
+  },
+  {
+    "slug": "about-my-blog",
+    "title": "About My Blog",
+    "date": "2025-08-19",
+    "excerpt": "---",
+    "tags": [
+      "welcome",
+      "blog"
+    ],
+    "readingTimeMin": 1,
+    "wordCount": 185,
+    "draft": false,
+    "pathRel": "posts/welcome.md"
+  },
+  {
+    "slug": "incremental-test",
+    "title": "Incremental Test Post",
+    "date": "2025-08-04",
+    "excerpt": "# Incremental Test Post",
+    "tags": [],
+    "readingTimeMin": 1,
+    "wordCount": 12,
+    "draft": false,
+    "pathRel": "posts/__incremental-test.md"
   },
   {
     "slug": "footnote-demo",
@@ -48,19 +73,5 @@
     "wordCount": 28,
     "draft": false,
     "pathRel": "posts/__multi-test.md"
-  },
-  {
-    "slug": "welcome-to-my-blog",
-    "title": "Welcome to My Blog",
-    "date": "2024-01-15",
-    "excerpt": "This is my first blog post! I'll be sharing thoughts about programming, technology, and whatever else catches my interest.",
-    "tags": [
-      "welcome",
-      "blog"
-    ],
-    "readingTimeMin": 1,
-    "wordCount": 39,
-    "draft": false,
-    "pathRel": "posts/welcome.md"
   }
 ]

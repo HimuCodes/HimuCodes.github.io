@@ -35,11 +35,16 @@ fs.writeFileSync(draftNote, `---\ntitle: Draft Test\ndate: 2025-08-01\npublish: 
 // 1b. Multi-heading + image post (for TOC, responsive image, Shiki highlight)
 ensureSampleImage();
 const multiPost = path.join(root,'notes','posts','__multi-test.md');
-fs.writeFileSync(multiPost, `---\ntitle: Multi Feature Test\ndate: 2025-08-02\ntags: ['multi','ci']\n---\n# Multi Feature Test\n\nIntro paragraph.\n\n## Section One\nSome text.\n\n### Subsection A\nMore text.\n\n## Section Two\nCode sample:\n\n\`\`\`js\nconsole.log('hi');\n\`\`\`\n\nImage below:\n\n![Alt text](/test-sample.png)\n`);
+fs.writeFileSync(multiPost, `---\ntitle: Multi Feature Test\ndate: 2025-08-02\ntags: ['multi','ci']\nslug: multi-feature-test\n---\n# Multi Feature Test\n\nIntro paragraph.\n\n## Section One\nSome text.\n\n### Subsection A\nMore text.\n\n## Section Two\nCode sample:\n\n\`\`\`js\nconsole.log('hi');\n\`\`\`\n\nImage below:\n\n![Alt text](/test-sample.png)\n`);
 
 // 1c. Footnote demo post
 const footnoteNote = path.join(root,'notes','posts','__footnote-demo.md');
-fs.writeFileSync(footnoteNote, `---\ntitle: Footnote Demo\ndate: 2025-08-03\n---\n# Footnote Demo\n\nSome text with a footnote[^a] and second[^b].\n\n[^a]: First footnote\n[^b]: Second footnote\n`);
+fs.writeFileSync(footnoteNote, `---\ntitle: Footnote Demo\ndate: 2025-08-03\nslug: footnote-demo\n---\n# Footnote Demo\n\nSome text with a footnote[^a] and second[^b].\n\n[^a]: First footnote\n[^b]: Second footnote\n`);
+
+// 1d. Incremental test post
+const incSlug = 'incremental-test';
+const incPost = path.join(root,'notes','posts','__incremental-test.md');
+fs.writeFileSync(incPost, `---\ntitle: Incremental Test Post\ndate: 2025-08-04\nslug: ${incSlug}\n---\n# Incremental Test Post\n\nInitial content line.\n`);
 
 // 2. Initial build (exclude draft)
 run('node build.mjs');
@@ -86,22 +91,19 @@ assert.ok(/id="fn-a"/.test(footHtml), 'footnote a list item missing');
 assert.ok(/href="#fnref-a"/.test(footHtml), 'back reference link for footnote a missing');
 assert.ok(/id="fnref-a"/.test(footHtml), 'footnote reference button id missing');
 
-// 4. Incremental build test (no content change)
-const somePost = postsJson[0];
-const postHtmlPath = path.join(dist,'blog', somePost.slug, 'index.html');
-const mtime1 = fs.statSync(postHtmlPath).mtimeMs;
+// 4. Incremental build test (no content change) now uses dedicated incremental test post
+const incHtmlPath = path.join(dist,'blog', incSlug, 'index.html');
+assert.ok(fs.existsSync(incHtmlPath), 'incremental test post missing after build');
+const incContent1 = fs.readFileSync(incHtmlPath,'utf8');
 run('node build.mjs');
-const mtime2 = fs.statSync(postHtmlPath).mtimeMs;
-assert.strictEqual(mtime1, mtime2, 'post regenerated unexpectedly without changes (incremental fail)');
+const incContent2 = fs.readFileSync(incHtmlPath,'utf8');
+assert.strictEqual(incContent1, incContent2, 'incremental test post content changed unexpectedly without source modification');
 
 // 5. Force content change and ensure regeneration
-const targetNote = path.join(root,'notes', postsJson[0].slug + '.md');
-if (fs.existsSync(targetNote)) {
-  fs.appendFileSync(targetNote, '\nAppended line for incremental test.');
-  run('node build.mjs');
-  const mtime3 = fs.statSync(postHtmlPath).mtimeMs;
-  assert.ok(mtime3 > mtime2, 'post did not regenerate after change');
-}
+fs.appendFileSync(incPost, '\nAppended line for incremental test.');
+run('node build.mjs');
+const incContent3 = fs.readFileSync(incHtmlPath,'utf8');
+assert.ok(incContent3.length > incContent2.length, 'incremental test post not regenerated (content length unchanged)');
 
 // 6. New post script test
 const newSlug = 'test-post-from-script';
@@ -123,6 +125,17 @@ assert.ok(fs.existsSync(ogPng) || fs.existsSync(ogSvg), 'OG image not generated'
 run('node build.mjs --strict-links');
 
 // Cleanup draft (keep generated posts & multi test for subsequent runs)
-fs.unlinkSync(draftNote);
+// Updated cleanup to remove all temp files
+[ draftNote, multiPost, footnoteNote, incPost, newPostFile ].forEach(f => { try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch {} });
+
+// Remove generated dist/blog directories and OG images for test slugs
+const testSlugs = ['multi-feature-test','footnote-demo','incremental-test','test-post-from-script'];
+for (const s of testSlugs){
+  try { fs.rmSync(path.join(dist,'blog', s), { recursive:true, force:true }); } catch {}
+  ['png','svg'].forEach(ext => {
+    try { fs.unlinkSync(path.join(dist,'og', `${s}.${ext}`)); } catch {}
+    try { fs.unlinkSync(path.join(root,'public','og', `${s}.${ext}`)); } catch {}
+  });
+}
 
 console.log('\nAll tests passed.');

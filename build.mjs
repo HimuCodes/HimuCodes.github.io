@@ -60,10 +60,40 @@ const CONFIG = {
 /* ---------- Utility helpers ---------- */
 const ensureDir = p => fs.mkdirSync(p, { recursive: true });
 const write = (file, content) => { ensureDir(path.dirname(file)); fs.writeFileSync(file, content); };
-const copy = (src, dest) => { ensureDir(path.dirname(dest)); fs.copyFileSync(src, dest); };
-const copyTree = (srcDir, destDir) => { /* unchanged */ if (!fs.existsSync(srcDir)) return; const entries = fg.sync('**/*', { cwd: srcDir, dot: true }); entries.forEach(f => { const from = path.join(srcDir, f); const to = path.join(destDir, f); if (fs.lstatSync(from).isDirectory()) return; ensureDir(path.dirname(to)); fs.copyFileSync(from, to); }); };
-const sanitizeSlug = s => slugify(s, { lower: true, strict: true, remove: /[*+~.()'"!:@?]/g });
-const hashContent = buf => crypto.createHash('sha256').update(buf).digest('hex').slice(0, 12);
+const hashContent = (buf) => crypto.createHash('sha256').update(buf).digest('hex').slice(0,12);
+// Added helpers: sanitizeSlug & copyTree (were missing causing ReferenceErrors)
+function sanitizeSlug(str){
+  if (!str) return 'item';
+  // Use slugify with safe defaults; keep unicode letters/numbers, strip other punctuation
+  const s = slugify(str, { lower:true, strict:true });
+  return s || 'item';
+}
+function copyTree(src, dest){
+  try {
+    if (!fs.existsSync(src)) return;
+    const stat = fs.statSync(src);
+    if (stat.isFile()) {
+      ensureDir(path.dirname(dest));
+      fs.copyFileSync(src, dest);
+      return;
+    }
+    ensureDir(dest);
+    const entries = fs.readdirSync(src, { withFileTypes:true });
+    for (const ent of entries){
+      const s = path.join(src, ent.name);
+      const d = path.join(dest, ent.name);
+      if (ent.isDirectory()) copyTree(s,d); else if (ent.isFile()) { ensureDir(path.dirname(d)); fs.copyFileSync(s,d); }
+    }
+  } catch (e){ console.warn('[copyTree] failed', src, '->', dest, e.message); }
+}
+// Display date with month names (internal stays ISO)
+function formatDisplayDate(iso){
+  if (!iso) return iso;
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${m[3]} ${months[parseInt(m[2],10)-1]} ${m[1]}`;
+}
 
 /* ---------- Footnotes + Markdown Processing ---------- */
 function preprocessMarkdown(raw){
@@ -95,9 +125,13 @@ function renderMarkdownWithExtrasSync(md){
     if (highlighter){ try { return highlighter.codeToHtml(code, { lang, theme:'github-dark-default' }); } catch {} }
     return `<pre><code>${escapeHtml(code)}</code></pre>`;
   };
+  // Render main content
   const html = marked.parse(content, { mangle:false, headerIds:true, renderer });
-  const hiddenDefs = Object.keys(footnotes).length ? `<div class="footnote-defs" hidden>${Object.entries(footnotes).map(([id,txt])=>`<div data-fn-def="${id}">${escapeHtml(txt)}</div>`).join('')}</div>`: '';
-  const footList = order && order.length ? `<section class="footnotes"><ol>${order.map(id=> `<li id="fn-${id}">${escapeHtml(footnotes[id]||'')} <a href="#fnref-${id}" class="fn-back" aria-label="Back to reference">↩</a></li>`).join('')}</ol></section>`: '';
+  // Render footnote definitions as inline markdown (allow * _ ` etc.)
+  const renderedDefs = {};
+  Object.entries(footnotes).forEach(([id, txt]) => { renderedDefs[id] = marked.parseInline(txt, { mangle:false, headerIds:false }); });
+  const hiddenDefs = Object.keys(footnotes).length ? `<div class="footnote-defs" hidden>${Object.entries(renderedDefs).map(([id,txt])=>`<div data-fn-def="${id}">${txt}</div>`).join('')}</div>`: '';
+  const footList = order && order.length ? `<section class="footnotes"><ol>${order.map(id=> `<li id="fn-${id}">${renderedDefs[id] || ''} <a href="#fnref-${id}" class="fn-back" aria-label="Back to reference">↩</a></li>`).join('')}</ol></section>`: '';
   return html + hiddenDefs + footList;
 }
 
@@ -282,6 +316,20 @@ async function buildSite(){
   copyTree(JS_DIR, path.join(DIST,'js'));
   copyTree(path.join(NOTES_DIR, 'attachments'), path.join(DIST,'attachments'));
   const { posts, aboutNote } = collectNotes();
+  // Purge stale blog post directories (those no longer present in notes)
+  const blogDir = path.join(DIST,'blog');
+  if (fs.existsSync(blogDir)){
+    const keep = new Set(posts.map(p=>p.slug));
+    try {
+      fs.readdirSync(blogDir, { withFileTypes:true }).forEach(ent => {
+        if (ent.isDirectory()){
+          if (!keep.has(ent.name)) {
+            fs.rmSync(path.join(blogDir, ent.name), { recursive:true, force:true });
+          }
+        }
+      });
+    } catch {}
+  }
   const imagesResultPromise = optimizeImages();
   const assets = processAssets();
   posts.forEach(p => { if (!p.title) console.warn('[warn] missing title for', p.slug); if (!p.date) console.warn('[warn] missing date for', p.slug); });
@@ -305,16 +353,28 @@ async function buildSite(){
     });
   } catch {}
   write(path.join(DIST,'about','index.html'), layout({ title:'about', active:'/about/', body:aboutHTML + `<nav class="post-nav"><a href="${SITE_BASE}/">&larr; Back to Home</a></nav>`, base:SITE_BASE, assets, meta:{ description:'about', type:'profile' } }));
-  const blogList = `<ul class="post-list">${posts.map(p => `<li><a href="${SITE_BASE}/blog/${p.slug}/"><span class="arrow">›</span> ${p.date} - ${p.title}</a></li>`).join('')}</ul>`;
+  const blogList = `<ul class="post-list">${posts.map(p => `<li><a href="${SITE_BASE}/blog/${p.slug}/"><span class="arrow">›</span> ${formatDisplayDate(p.date)} - ${p.title}</a></li>`).join('')}</ul>`;
   write(path.join(DIST,'blog','index.html'), layout({ title:'blog', active:'/blog/', body:blogList, base:SITE_BASE, assets, meta:{ description:'blog posts', type:'website' } }));
   // RSS page (pretty UI page linking to raw feed)
   const rssPage = `<h1>RSS</h1><p>Subscribe via <code>${SITE_BASE}/feed.xml</code></p><p><a href="${SITE_BASE}/feed.xml">Raw feed</a></p>`;
   write(path.join(DIST,'rss','index.html'), layout({ title:'rss', active:'/rss/', body:rssPage, base:SITE_BASE, assets, meta:{ description:'rss feed', type:'website' } }));
   const tagSet = new Map();
   posts.forEach(p => p.tags.forEach(t => { if (!tagSet.has(t)) tagSet.set(t, []); tagSet.get(t).push(p); }));
+  // Purge stale tag directories before recreating
+  const tagsDistDir = path.join(DIST,'tags');
+  if (fs.existsSync(tagsDistDir)){
+    const keepTags = new Set([...tagSet.keys()].map(t=>sanitizeSlug(t)));
+    try {
+      fs.readdirSync(tagsDistDir, { withFileTypes:true }).forEach(ent => {
+        if (ent.isDirectory()){
+          if (!keepTags.has(ent.name)) fs.rmSync(path.join(tagsDistDir, ent.name), { recursive:true, force:true });
+        }
+      });
+    } catch {}
+  }
   const tagIndex = `<h2>Tags</h2><ul class="post-list">${[...tagSet.keys()].sort().map(t => `<li><a href="${SITE_BASE}/tags/${sanitizeSlug(t)}/">${t} (${tagSet.get(t).length})</a></li>`).join('')}</ul>`;
   write(path.join(DIST,'tags','index.html'), layout({ title:'tags', active:'/tags/', body:tagIndex, base:SITE_BASE, assets, meta:{ description:'tags', type:'website' } }));
-  tagSet.forEach((postsArr, tag) => { /* existing gen */ const body = `<h2>Tag: ${escapeHtml(tag)}</h2><ul class="post-list">${postsArr.map(p => `<li><a href="${SITE_BASE}/blog/${p.slug}/"><span class=\"arrow\">›</span> ${p.date} - ${p.title}</a></li>`).join('')}</ul><p><a href="${SITE_BASE}/tags/${sanitizeSlug(tag)}/feed.xml" class="rss-mini">Tag RSS</a></p>`; write(path.join(DIST,'tags',sanitizeSlug(tag),'index.html'), layout({ title:`tag-${tag}`, active:'/tags/', body, base:SITE_BASE, assets, meta:{ description:`Tag ${tag}`, type:'website' } })); write(path.join(DIST,'tags',sanitizeSlug(tag),'feed.xml'), buildTagRSS(tag, postsArr)); });
+  tagSet.forEach((postsArr, tag) => { /* existing gen */ const body = `<h2>Tag: ${escapeHtml(tag)}</h2><ul class="post-list">${postsArr.map(p => `<li><a href="${SITE_BASE}/blog/${p.slug}/"><span class=\"arrow\">›</span> ${formatDisplayDate(p.date)} - ${p.title}</a></li>`).join('')}</ul><p><a href="${SITE_BASE}/tags/${sanitizeSlug(tag)}/feed.xml" class="rss-mini">Tag RSS</a></p>`; write(path.join(DIST,'tags',sanitizeSlug(tag),'index.html'), layout({ title:`tag-${tag}`, active:'/tags/', body, base:SITE_BASE, assets, meta:{ description:`Tag ${tag}`, type:'website' } })); write(path.join(DIST,'tags',sanitizeSlug(tag),'feed.xml'), buildTagRSS(tag, postsArr)); });
   posts.forEach(p => {
     const prevNotes = prevManifest?.notes || {};
     const unchanged = incremental && prevNotes[p.slug] === p.hash && !siteChanged;
@@ -346,7 +406,9 @@ async function buildSite(){
     const schema = { '@context':'https://schema.org', '@type':'Article', headline:p.title, datePublished:p.date, dateModified: p.lastMod || p.date, wordCount:p.wordCount, author:{ '@type':'Person', name:'himu' } };
     const ogRelPromise = ensureOgImage(p.slug, p.title);
     p._ogPromise = ogRelPromise;
-    const metaLine = `<div class="post-meta">${p.date} • ${p.readingTimeMin} min • ${p.wordCount} words${p.lastMod && p.lastMod.slice(0,10)!==p.date ? ' • updated '+p.lastMod.slice(0,10):''}${p.draft && DRAFTS ? ' • draft':''}</div>`;
+    const displayDate = formatDisplayDate(p.date);
+    const displayUpdated = p.lastMod && p.lastMod.slice(0,10)!==p.date ? formatDisplayDate(p.lastMod.slice(0,10)) : null;
+    const metaLine = `<div class="post-meta">${displayDate} • ${p.readingTimeMin} min • ${p.wordCount} words${displayUpdated ? ' • updated '+displayUpdated:''}${p.draft && DRAFTS ? ' • draft':''}</div>`;
     const watermark = p.draft && DRAFTS ? '<div class="draft-watermark">DRAFT</div>' : '';
     const body = `${watermark}${metaLine}${tocHtml}<article class="markdown">${html}</article><nav class="post-nav"><a href="${SITE_BASE}/blog/">&larr; Back to Blog</a></nav>`;
     if (!(unchanged && fs.existsSync(path.join(DIST,'blog',p.slug,'index.html'))))
@@ -389,7 +451,7 @@ async function buildSite(){
   });
 }
 
-const SITE_FILES = [path.join(__root,'build.mjs'), path.join(__root,'src','templates','layout.js'), path.join(__root,'src','templates','component.js')];
+const SITE_FILES = [path.join(__root,'build.mjs'), path.join(__root,'src','templates','layout.js'), path.join(__root,'src','templates','component.js'), path.join(CSS_DIR,'style.css'), path.join(JS_DIR,'starfield.js'), path.join(__root,'src','enhancements.js')];
 function computeSiteVersion(){
   let acc = '';
   for (const f of SITE_FILES){ try { acc += fs.readFileSync(f); } catch {} }

@@ -5,7 +5,7 @@
 <title>himu — about</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="about">
-<link rel="stylesheet" href="/css/style.6b9b4bc8cf3b.css" fetchpriority="high">
+<link rel="stylesheet" href="/css/style.3da01966fa9e.css" fetchpriority="high">
 <style data-critical>html, body { height:100%; }
 body {
     margin:0;
@@ -23,10 +23,18 @@ body {
     max-width: var(--max-width);
     margin:0 auto;
 }
-.brand { display:flex; align-items:center; gap: .95rem; max-width: 65%; }
+.brand {
+    display:flex;
+    align-items:center;
+    gap:.95rem;
+    flex:1 1 auto;
+    max-width:100%;
+    min-width:0;
+}
 .logo { display:block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); flex-shrink: 0; }
 .main-nav {
-    flex-shrink: 0; /* Prevent nav from shrinking */
+    flex:0 0 auto;
+    max-width:100%;
 }
 .main-nav ul {
     list-style:none;
@@ -59,7 +67,6 @@ body {
     margin: 0 auto;
     padding: 0 clamp(1rem,2vw,2rem) 4rem;
     min-height:calc(100dvh - 100px);
-    font-family: var(--mono);
     line-height:1.52;
     font-size: 15px;
 }
@@ -74,6 +81,8 @@ body {
 .markdown h1 .hash, .markdown h2 .hash {
     color: var(--accent1);
 }
+/* Add global heading size scale (markdown semantic) */
+.markdown h1 { font-size: clamp(2rem, 5vw, 2.6rem); }
 .markdown h1:hover .anchor, .markdown h2:hover .anchor, .markdown h3:hover .anchor, .markdown h4:hover .anchor { opacity:.9; }
 @media (max-width: 720px) {
     .site-header {
@@ -102,7 +111,9 @@ body.is-post .site-header { padding-top: 2rem; }
   color:transparent; /* gradient text */
   text-shadow:none; /* ensure no glow */
   -webkit-text-fill-color: transparent; /* Safari */
-}</style>
+}
+/* About page typography adjustments */
+body[data-page="about"] .markdown p, body[data-page="about"] .markdown li { font-size:16px; line-height:1.6; }</style>
 <link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
 
 <meta property="og:title" content="About">
@@ -135,15 +146,15 @@ body.is-post .site-header { padding-top: 2rem; }
     </nav>
 </header>
 <main class="content readable">
-<article class="markdown"><p>📄 <a href="/Himanshu_Tiwari_Resume.pdf">View My Resume</a> · ✉️ <a href="mailto:himanshu.tiwari.17@outlook.com">himanshu.tiwari.17@outlook.com</a> · 
-🌐 <a href="https://links.himu.me">links.himu.me</a> · 🎵 <a href="https://music.himu.me">music.himu.me</a></p>
+<article class="markdown"><p><a href="/Himanshu_Tiwari_Resume.pdf">📂 Resume (PDF)</a> · 🔗 <a href="https://links.himu.me">links.himu.me</a> · 🎵 <a href="https://music.himu.me">music.himu.me</a> · ✉️ <a href="mailto:tiwari.himanshu@proton.me">tiwari.himanshu@proton.me</a> · 🖥️ <a href="https://github.com/HimuCodes">github.com/HimuCodes</a></p>
 <hr>
-<p>Hi, I’m <strong>Himanshu Tiwari</strong> — but online I’m usually <strong>himu</strong> or sometimes <strong>audbhida</strong>.</p>
+<h1>Hi, I’m Himanshu Tiwari</h1>
+<p>Online I’m usually <strong>himu</strong> (sometimes <strong>audbhida</strong> when I’m feeling cryptic).</p>
 <p>I’m a little bit of everything: an engineer, security researcher, music producer, film buff, poet, and occasional philosopher. My life runs on curiosity and chai, and my brain tends to wander across way too many niches (thanks ADHD).</p>
 <p>I’m not a fan of boxes, so this “About” is less a clean resume and more a log of all the things I’ve been up to, why they matter to me, and how they all connect.</p>
 <hr>
 <h2>What I’m Good At</h2>
-<p>I’m good at: a few specific things, and a lot of figuring-things-out-on-the-fly. If you throw me a weird problem — whether it’s a radio that won’t talk, a packet that refuses to decode, or a synth that’s making ghost noises — I’ll usually wrestle it into shape (sometimes gracefully, sometimes with a lot of late-night coffee).</p>
+<p>I’m good at: a few specific things, and a lot of figuring-things-out-on-the-fly. If you throw me a weird problem whether it’s a radio that won’t talk, a packet that refuses to decode, or a synth that’s making ghost noises — I’ll usually wrestle it into shape (sometimes gracefully, sometimes with a lot of late-night brainstorming).</p>
 <p>I like working across disciplines, stitching hardware and software together, and finding the point where “oh no this is impossible” suddenly becomes “oh wait, this works.”</p>
 <p>I’m also (I think?) easy to work with — I don’t take tech too seriously, and I try to keep curiosity bigger than ego.</p>
 <hr>
@@ -151,7 +162,7 @@ body.is-post .site-header { padding-top: 2rem; }
 <ul>
 <li><p><strong>Embedded Systems &amp; Security</strong>: Rust, C, C++, Embedded C, bare-metal driver dev, STM32, ESP32, LoRaWAN, Wi-Fi security, PLC integration</p>
 </li>
-<li><p><strong>System Programming &amp; Tools</strong>: Rust (learning deeply), Lua, Compiler/Interpreter design, Network programming, Protocol fuzzing</p>
+<li><p><strong>System Programming &amp; Tools</strong>: Rust (learning deeply), Network programming, Interfacing with hardware, Packet analysis, Protocol reverse-engineering, Custom tooling</p>
 </li>
 <li><p><strong>AI/ML &amp; Vision</strong>: CNN-based anomaly detection, YOLO object detection, TensorFlow, applied ML for embedded/IoT contexts</p>
 </li>
@@ -163,13 +174,13 @@ body.is-post .site-header { padding-top: 2rem; }
 <hr>
 <h3>Other Experience</h3>
 <ul>
-<li><p>Languages: Python, Java, Basic Assembly, Basic Bash, JavaScript, HTML/CSS, JSON, Markdown</p>
+<li><p>Languages: Python, Basic Assembly, Bash, JavaScript, HTML/CSS, JSON, Markdown</p>
 </li>
 <li><p>Tools &amp; Frameworks: Docker, SQL/Databases, Nix/NixOS, Qt</p>
 </li>
 <li><p>Creative Tech: TouchDesigner (beginner), Figma, Photography/Poetry integration with tech</p>
 </li>
-<li><p>Odd skills: Data hoarding, system debugging with <code>strace</code>, pixel art, making systems talk that were never supposed to talk to each other</p>
+<li><p>Odd skills: Data hoarding, system debugging with <code>strace</code>, film dissection, film emulation, making systems talk that were never supposed to talk to each other</p>
 </li>
 </ul>
 <hr>
@@ -178,9 +189,9 @@ body.is-post .site-header { padding-top: 2rem; }
 <ul>
 <li><p><strong>LoRaPwn</strong> – A LoRaWAN pentesting framework I built during my research fellowship at Université d’Avignon, France. I rewrote the MAC layer from scratch in Rust/C++, swapped AES for ChaCha20-Poly1305, and even integrated CNN-based anomaly detection for smarter audits. It was also my deep dive into radio hacking and bare-metal programming.</p>
 </li>
-<li><p><strong>Project F.L.A.M.E Guardian</strong> – An autonomous fire detection and suppression system that combined AI vision, PLC integration, and robotics. It started as a “what if we…” idea and grew into a full industrial prototype.</p>
+<li><p><strong>Project F.L.A.M.E Nirvanagni</strong> – An autonomous fire detection and suppression system that combined AI vision, PLC integration, and robotics. It started as a “what if we…” idea and grew into a full industrial prototype.</p>
 </li>
-<li><p><strong>Slipper Zero</strong> – A Wi-Fi penetration tool built on ESP32 (published in IEEE Xplore at GCWOT 2024). Think deauth attacks, PMKID/handshake captures, DoS testing, and PCAP/HCCAPX integration.</p>
+<li><p><strong>Slipper Zero</strong> – A Wi-Fi penetration tool built on ESP32 (published in IEEE Xplore at GCWOT 2024). Think deauth attacks, PMKID/handshake captures, DoS testing, and PCAP/HCCAPX integration.<br>DOI: <a href="https://doi.org/10.1109/GCWOT63882.2024.10805625">https://doi.org/10.1109/GCWOT63882.2024.10805625</a></p>
 </li>
 </ul>
 <p>I’ve also built smaller-but-fun things: a secure router (<em>Privacy-Pi</em> with Tor, OpenVPN, WireGuard, Pi-hole), bare-metal drivers for STM32, and weird experiments like writing a Lua interpreter in Rust.</p>
@@ -202,6 +213,8 @@ body.is-post .site-header { padding-top: 2rem; }
 </li>
 <li><p><strong>Granular synthesis</strong> – I love the textures it can create, though I’m still learning how to tame it.</p>
 </li>
+<li><p><strong>Ableton Live</strong> – Learning MAX MSP for programming in Ableton.</p>
+</li>
 </ul>
 <p>When I can’t make music, I sometimes build tools that make music for me. And recently, I picked up the <strong>guitar</strong> — because why not add more chaos into the mix?</p>
 <hr>
@@ -215,30 +228,22 @@ body.is-post .site-header { padding-top: 2rem; }
 <hr>
 <h2>Random Facts / Quirks</h2>
 <ul>
-<li><p>I have ADHD, which makes me a <strong>divergent builder</strong>.</p>
-</li>
-<li><p>I collect <strong>microcontrollers and SIM cards</strong> for no practical reason.</p>
-</li>
-<li><p>I hoard data like a digital dragon.</p>
-</li>
-<li><p>I’m currently learning <strong>TouchDesigner</strong> to combine my music, code, and visuals.</p>
-</li>
-<li><p>I’m an <strong>ENFJ</strong>, which means I somehow manage to be both introspective and very people-oriented.</p>
-</li>
+<li>I have ADHD, which makes me a <strong>divergent builder</strong>.</li>
+<li>I collect <strong>microcontrollers and SIM cards</strong> for no practical reason.</li>
+<li>I hoard data like a digital dragon.</li>
+<li>I’m currently learning <strong>TouchDesigner</strong> to combine my music, code, and visuals.</li>
+<li>I’m an <strong>ENFJ</strong>, which means I somehow manage to be both introspective and very people-oriented.</li>
 </ul>
 <hr>
 <h2>Bubbles of Me</h2>
-<div class="bubbles"><span class="bubble">Rust</span><span class="bubble">LoRaWAN</span><span class="bubble">Embedded Systems</span><span class="bubble">Wi-Fi Security</span><span class="bubble">Radio Hacking</span><span class="bubble">Game Physics</span><span class="bubble">Simulation</span><span class="bubble">AI/ML</span><span class="bubble">Poetry</span><span class="bubble">Literature</span><span class="bubble">Synthwave</span><span class="bubble">IDM</span><span class="bubble">EDM</span><span class="bubble">Ambient</span><span class="bubble">Film Buff</span><span class="bubble">Procedural Music</span><span class="bubble">TouchDesigner</span><span class="bubble">Photography</span><span class="bubble">Philosophy</span><span class="bubble">ADHD</span><span class="bubble">Data Hoarding</span><span class="bubble">Generalist</span><span class="bubble">Small Teams</span><span class="bubble">Curiosity</span></div>
+<div class="bubbles"><span class="bubble">Rust</span><span class="bubble">LoRaWAN</span><span class="bubble">Embedded Systems</span><span class="bubble">Wi-Fi Security</span><span class="bubble">Radio Hacking</span><span class="bubble">AI/ML</span><span class="bubble">Poetry</span><span class="bubble">Literature</span><span class="bubble">Synthwave</span><span class="bubble">IDM</span><span class="bubble">EDM</span><span class="bubble">Ambient</span><span class="bubble">Film Buff</span><span class="bubble">Procedural Music</span><span class="bubble">TouchDesigner</span><span class="bubble">Photography</span><span class="bubble">Philosophy</span><span class="bubble">ADHD</span><span class="bubble">Data Hoarding</span><span class="bubble">Generalist</span><span class="bubble">Small Teams</span><span class="bubble">Curiosity</span></div>
 <hr>
 <h2>Where I’m Headed</h2>
 <p>Right now, I’m in my final year of engineering, splitting time between:</p>
 <ul>
-<li><p>Building niche tools (like a Rust Lua interpreter, or AI-powered TDR analysis for my major project).</p>
-</li>
-<li><p>Releasing more music and teaching myself guitar.</p>
-</li>
-<li><p>Exploring how to fuse my interests into one universe — code, sound, visuals, and writing all woven together.</p>
-</li>
+<li>Building niche tools (like a Rust Lua interpreter, or AI-powered TDR analysis for my major project).</li>
+<li>Releasing more music and teaching myself guitar.</li>
+<li>Exploring how to fuse my interests into one universe — code, sound, visuals, and writing all woven together.</li>
 </ul>
 <p>I want to be a <strong>renaissance engineer</strong> — someone who stitches together different disciplines into expressive, dependable systems.</p>
 <p>If you’re into that kind of chaos, we should talk.</p>

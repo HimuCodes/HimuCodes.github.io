@@ -5,7 +5,7 @@
 <title>himu — home</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="home">
-<link rel="stylesheet" href="/css/style.6b9b4bc8cf3b.css" fetchpriority="high">
+<link rel="stylesheet" href="/css/style.3da01966fa9e.css" fetchpriority="high">
 <style data-critical>html, body { height:100%; }
 body {
     margin:0;
@@ -23,10 +23,18 @@ body {
     max-width: var(--max-width);
     margin:0 auto;
 }
-.brand { display:flex; align-items:center; gap: .95rem; max-width: 65%; }
+.brand {
+    display:flex;
+    align-items:center;
+    gap:.95rem;
+    flex:1 1 auto;
+    max-width:100%;
+    min-width:0;
+}
 .logo { display:block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.35)); flex-shrink: 0; }
 .main-nav {
-    flex-shrink: 0; /* Prevent nav from shrinking */
+    flex:0 0 auto;
+    max-width:100%;
 }
 .main-nav ul {
     list-style:none;
@@ -59,7 +67,6 @@ body {
     margin: 0 auto;
     padding: 0 clamp(1rem,2vw,2rem) 4rem;
     min-height:calc(100dvh - 100px);
-    font-family: var(--mono);
     line-height:1.52;
     font-size: 15px;
 }
@@ -74,6 +81,8 @@ body {
 .markdown h1 .hash, .markdown h2 .hash {
     color: var(--accent1);
 }
+/* Add global heading size scale (markdown semantic) */
+.markdown h1 { font-size: clamp(2rem, 5vw, 2.6rem); }
 .markdown h1:hover .anchor, .markdown h2:hover .anchor, .markdown h3:hover .anchor, .markdown h4:hover .anchor { opacity:.9; }
 @media (max-width: 720px) {
     .site-header {
@@ -102,7 +111,9 @@ body.is-post .site-header { padding-top: 2rem; }
   color:transparent; /* gradient text */
   text-shadow:none; /* ensure no glow */
   -webkit-text-fill-color: transparent; /* Safari */
-}</style>
+}
+/* About page typography adjustments */
+body[data-page="about"] .markdown p, body[data-page="about"] .markdown li { font-size:16px; line-height:1.6; }</style>
 <link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml">
 
 <meta property="og:title" content="himu.me">
