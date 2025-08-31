@@ -1,4 +1,4 @@
-/* Enhanced star / aurora system with optional WebGL acceleration */
+/* Enhanced star / constellation starfield (aurora removed) */
 (function(){
     const glCanvas = document.getElementById('glstars');
     const starCanvas = document.getElementById('starfield');
@@ -6,18 +6,18 @@
     if(!starCanvas || !shootCanvas) return;
     const ctx = starCanvas.getContext('2d');
     const ctx2 = shootCanvas.getContext('2d');
-
     let w = window.innerWidth, h = window.innerHeight;
     starCanvas.width = w; starCanvas.height = h;
     shootCanvas.width = w; shootCanvas.height = h;
     if (glCanvas){ glCanvas.width = w; glCanvas.height = h; }
 
-    const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // Simplified static production constants (white stars, no seasonal shift)
-    const duskFactor = 1; // constant brightness (override earlier logic)
-    const seasonalHueShift = 0; // keep aurora formula stable
+    // Always animate
+    const duskFactor = 1;
     const starColors = ['255,255,255'];
+    // Updated sizing + speed constants
+    const STAR_SIZE_MULT = 2.4;          // larger stars (prev 1.9)
+    const TWINKLE_SPEED_SCALE = 0.42;    // slow overall twinkle speed (lower = slower)
+    const TWINKLE_FREQ_SCALE = 0.55;     // reduce sine frequency in 2D (visual smoothness)
 
     /* Toggle nebula for production performance */
     const ENABLE_NEBULA = false; // disabled for perf; set true to enable
@@ -54,22 +54,30 @@
 
     /* ---------- Stars Data (shared) ---------- */
     let stars = [];
-    // Performance / capability detection
+    // Performance / capability detection (leave original logic but rename for clarity)
     const deviceMem = navigator.deviceMemory || 0;
     const cores = navigator.hardwareConcurrency || 4;
     const isSmallViewport = Math.min(window.innerWidth, window.innerHeight) < 700;
     const isCoarsePointer = matchMedia('(pointer: coarse)').matches;
-    const lowPower = isCoarsePointer || isSmallViewport || (deviceMem && deviceMem <= 4) || cores <= 4;
+    // Add URL/attribute overrides for feature forcing
+    let forceFull = false, forceLite = false;
+    try {
+        const qp = new URLSearchParams(location.search);
+        forceFull = qp.get('fx') === 'full' || document.documentElement.dataset.forceFull === 'true';
+        forceLite = qp.get('fx') === 'lite' || document.documentElement.dataset.forceLite === 'true';
+    } catch {}
+    const lowPowerBase = isCoarsePointer || isSmallViewport || (deviceMem && deviceMem <= 4) || cores <= 4;
+    const lowPower = forceFull ? false : (forceLite ? true : lowPowerBase);
 
-    // Central perf configuration (will be adapted at runtime)
+    // Central perf configuration (aurora always on now)
     const PERF = {
-        maxStars: lowPower ? 900 : 2500,
-        baseDivisor: lowPower ? 3200 : 2500,
-        aurora: !lowPower,              // disable aurora on low power
-        webgl: !lowPower,               // disable WebGL on low power (falls back to 2D faster for many small stars)
-        constellations: !lowPower,      // disable constellation lines on low power
-        shootingMax: lowPower ? 4 : 6,
-        shootingSkipThreshold: lowPower ? 0.93 : 0.88 // probability gate (Math.random() > threshold => skip)
+        maxStars: 2500,
+        baseDivisor: 2500,
+        aurora: true,
+        webgl: true,
+        constellations: true, // now can be forced via fx param
+        shootingMax: 6,
+        shootingSkipThreshold: 0.88
     };
 
     // Dynamic quality scale (auto-tunes by frame time)
@@ -77,7 +85,7 @@
     const MIN_QUALITY = 0.35;
 
     // Replace calcCount with adaptive version
-    const calcCount = () => prefersReduce ? 300 : Math.min(
+    const calcCount = () => Math.min(
         Math.floor((w * h) / PERF.baseDivisor * qualityScale),
         Math.floor(PERF.maxStars * qualityScale)
     );
@@ -88,9 +96,9 @@
             x: Math.random()*w,
             y: Math.random()*h,
             z: Math.random() + 0.05,
-            r: Math.random()*1.3 + 0.35,
+            r: Math.random()*1.3 + 0.45,
             tw: Math.random()*360,
-            twSpeed: 0.25 + Math.random()*0.8,
+            twSpeed: 0.08 + Math.random() * 0.28,
             c: starColors[0]
         };
     }
@@ -99,7 +107,7 @@
         STAR_TARGET = calcCount();
         if (stars.length > STAR_TARGET) stars.length = STAR_TARGET;
         while (stars.length < STAR_TARGET) stars.push(spawnStar());
-        if (PERF.constellations) buildConstellations(); else constellationLines = [];
+        buildConstellations();
         uploadGLStars();
     }
 
@@ -123,13 +131,12 @@
     /* ---------- Constellations (simple proximity graph) ---------- */
     let constellationLines = [];
     function buildConstellations(){
-        if (!PERF.constellations) { constellationLines = []; return; }
         constellationLines = [];
         if (!stars.length) return;
         // Use a brighter subset
         const subset = [...stars].sort((a,b)=> b.r - a.r).slice(0, Math.min(90, Math.floor(stars.length*0.12)));
-        const maxDist = Math.min(w,h) * (lowPower?0.18:0.22);
-        const K = lowPower?2:3;
+        const maxDist = Math.min(w,h) * 0.22;
+        const K = 3;
         const edgeKey = (a,b)=> a.x<b.x || (a.x===b.x && a.y<b.y) ? `${a.x},${a.y},${b.x},${b.y}` : `${b.x},${b.y},${a.x},${a.y}`;
         const used = new Set();
         for (const a of subset){
@@ -147,7 +154,6 @@
     /* ---------- Shooting Stars & Aurora (2D) ---------- */
     const shooting = [];
     function spawnShooting(){
-        if (prefersReduce) return;
         if (shooting.length > PERF.shootingMax) return;
         if (Math.random() > PERF.shootingSkipThreshold) return; // rarity gate
         const speed = 6 + Math.random()*6;
@@ -157,114 +163,34 @@
             l: 110 + Math.random()*170,
             s: speed,
             life:0,
-            max: 50 + Math.random()*35,
-            hue: 200 + Math.random()*40
+            max: 50 + Math.random()*35
         });
     }
     // Faster interval retained; rarity handled in probability
     setInterval(()=> spawnShooting(), 1600 + Math.random()*1400);
-    // Single initial spawn after slight delay
     setTimeout(()=>{ spawnShooting(); }, 800);
-
-    const auroraRibbons = [];
-    let auroraTime = 0;
-    function initAurora(){
-        auroraRibbons.length = 0;
-        if (prefersReduce || !PERF.aurora) return;
-        const ribbonCount = 2 + (w>900 ? 1:0);
-        for (let i=0;i<ribbonCount;i++){
-            auroraRibbons.push({
-                baseY: 40 + i*50 + Math.random()*40,
-                amp: 25 + Math.random()*35,
-                freq: 0.0009 + Math.random()*0.0007,
-                speed: 0.08 + Math.random()*0.05,
-                hue: 115 + i*40 + seasonalHueShift + Math.random()*25,
-                phase: Math.random()*Math.PI*2,
-                alpha: lowPower ? 0.07 + Math.random()*0.03 : 0.10 + Math.random()*0.05
-            });
-        }
-    }
-    initAurora();
-
-    function drawAurora(dt){
-        if (prefersReduce) return;
-        auroraTime += dt;
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        const useFilter = 'filter' in ctx;
-        if (useFilter) ctx.filter = 'blur(22px)';
-        for (const r of auroraRibbons){
-            const segs = 48;
-            const yOffset = Math.sin(auroraTime * 0.15 + r.phase)*8;
-            ctx.beginPath();
-            for (let i=0;i<segs;i++){
-                const x = i/(segs-1) * w;
-                const y = r.baseY + yOffset + Math.sin(x*r.freq + auroraTime * r.speed + r.phase)*r.amp;
-                if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            }
-            ctx.lineTo(w, r.baseY + r.amp + 160);
-            ctx.lineTo(0, r.baseY + r.amp + 160);
-            ctx.closePath();
-            const grad = ctx.createLinearGradient(0, r.baseY - r.amp*0.5, 0, r.baseY + r.amp + 160);
-            const hue1 = (r.hue + Math.sin(auroraTime*0.3 + r.phase)*15);
-            grad.addColorStop(0, `hsla(${hue1+60}, 80%, 65%, 0)`);
-            grad.addColorStop(0.4, `hsla(${hue1}, 85%, 62%, ${r.alpha})`);
-            grad.addColorStop(0.7, `hsla(${hue1+30}, 70%, 55%, ${r.alpha*0.55})`);
-            grad.addColorStop(1, 'hsla(0,0%,0%,0)');
-            ctx.fillStyle = grad;
-            ctx.fill();
-        }
-        ctx.restore();
-    }
-
-    function drawShooting(){
-        ctx2.clearRect(0,0,w,h);
-        for(const s of shooting){
-            s.x -= s.s;
-            s.y += s.s*0.35;
-            s.life++;
-            const p = 1 - s.life/s.max;
-            const g = ctx2.createLinearGradient(s.x,s.y,s.x+s.l,s.y - s.l*0.4);
-            g.addColorStop(0,'rgba(255,255,255,0)');
-            g.addColorStop(0.08,`rgba(255,255,255,${0.55*p})`);
-            g.addColorStop(0.4,`rgba(255,255,255,${0.25*p})`);
-            g.addColorStop(1,'rgba(255,255,255,0)');
-            ctx2.beginPath();
-            ctx2.strokeStyle=g;
-            ctx2.lineWidth=0.7 + 1.1 * p; // thinner trail
-            ctx2.moveTo(s.x,s.y);
-            ctx2.lineTo(s.x + s.l, s.y - s.l*0.4);
-            ctx2.stroke();
-            // head glow reduced
-            ctx2.beginPath();
-            ctx2.fillStyle = `rgba(255,255,255,${0.55*p})`;
-            ctx2.arc(s.x,s.y,0.9 + 1.3*p,0,Math.PI*2);
-            ctx2.fill();
-        }
-        for (let i=shooting.length-1;i>=0;i--) if (shooting[i].life > shooting[i].max) shooting.splice(i,1);
-    }
 
     /* ---------- 2D Stars Fallback ---------- */
     function drawStars2D(){
-        for (const s of stars){
-            s.tw += s.twSpeed;
-            const tw = (Math.sin(s.tw*Math.PI/180)+1)/2;
+        for(const s of stars){
+            s.tw += s.twSpeed * TWINKLE_SPEED_SCALE;
+            const tw = (Math.sin(s.tw*Math.PI/180 * TWINKLE_FREQ_SCALE)+1)/2;
             const px = s.x + (pointer.x - w/2)*0.012*s.z;
             const py = s.y + (pointer.y - h/2)*0.012*s.z;
-            const alpha = (0.15 + tw*0.7) * duskFactor;
+            const alpha = (0.18 + tw*0.55) * duskFactor;
             ctx.beginPath();
             ctx.fillStyle = `rgba(${s.c},${alpha})`;
-            ctx.arc(px,py, s.r*(0.8 + tw*0.4), 0, Math.PI*2);
+            ctx.arc(px,py, STAR_SIZE_MULT*s.r*(0.78 + tw*0.35), 0, Math.PI*2);
             ctx.fill();
         }
     }
 
     function drawConstellations2D(){
-        if (!PERF.constellations || !constellationLines.length) return;
+        if (!constellationLines.length) return;
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        ctx.lineWidth = lowPower ? 0.5 : 0.6;
-        ctx.strokeStyle = lowPower ? 'rgba(255,255,255,0.13)' : 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 0.8;
+        ctx.strokeStyle = 'rgba(255,255,255,0.22)';
         for (const line of constellationLines){
             const parx = (pointer.x - w/2)*0.01*line.depth;
             const pary = (pointer.y - h/2)*0.01*line.depth;
@@ -284,12 +210,12 @@
         if (!glCanvas) return false;
         let gl2;
         try { gl2 = glCanvas.getContext('webgl2', { antialias:false, depth:false, stencil:false, premultipliedAlpha:true }); } catch(e){ gl2 = null; }
-        if (!gl2) { console.warn('[stars] WebGL2 not supported, using 2D fallback'); return false; }
+        if (!gl2) { console.warn('[stars] WebGL2 not supported, using 2D'); return false; }
         gl = gl2;
         useWebGL = true;
         if (starCanvas) starCanvas.style.background = 'transparent';
         if (glCanvas) glCanvas.style.background = 'radial-gradient(circle at 40% 60%, #18162b 0%, transparent 60%)';
-        const vs = `#version 300 es\nprecision mediump float;\nlayout(location=0) in vec3 aPos;layout(location=1) in vec2 aData;uniform vec2 uRes;uniform vec2 uPointer;uniform float uTime;out float vAlpha;void main(){float depth=aPos.z;vec2 par=(uPointer-uRes*0.5)*0.012*depth;vec2 pos=aPos.xy+par;float tw=(sin((uTime*0.4+aData.y))+1.0)*0.5;float size=aData.x*(0.75+tw*0.9);float depthFade=(0.5+(1.1-depth)*0.5);vAlpha=(0.25+tw*0.9)*depthFade;gl_Position=vec4((pos/uRes*2.0-1.0)*vec2(1.0,-1.0),0.0,1.0);gl_PointSize=size;}`;
+        const vs = `#version 300 es\nprecision mediump float;\nlayout(location=0) in vec3 aPos;layout(location=1) in vec2 aData;uniform vec2 uRes;uniform vec2 uPointer;uniform float uTime;out float vAlpha;void main(){float depth=aPos.z;vec2 par=(uPointer-uRes*0.5)*0.012*depth;vec2 pos=aPos.xy+par;float tw=(sin((uTime*0.18 + aData.y))+1.0)*0.5;float size=aData.x*(0.85+tw*0.55);float depthFade=(0.55+(1.05-depth)*0.45);vAlpha=(0.20+tw*0.60)*depthFade;gl_Position=vec4((pos/uRes*2.0-1.0)*vec2(1.0,-1.0),0.0,1.0);gl_PointSize=size;}`;
         const fs = `#version 300 es\nprecision mediump float;uniform float uDusk;in float vAlpha;out vec4 outColor;void main(){vec2 p=gl_PointCoord-0.5;float r=length(p);if(r>0.5) discard;float fall=smoothstep(0.5,0.0,r);vec3 white=vec3(1.0);outColor=vec4(white, vAlpha*fall*uDusk);}`;
         function compile(type, source){ const sh = gl.createShader(type); gl.shaderSource(sh, source); gl.compileShader(sh); if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh)); return sh; }
         try {
@@ -302,17 +228,14 @@
             glUniforms.uPointer = gl.getUniformLocation(glProgram,'uPointer');
             glUniforms.uTime = gl.getUniformLocation(glProgram,'uTime');
             glUniforms.uDusk = gl.getUniformLocation(glProgram,'uDusk');
-            glUniforms.uColorA = gl.getUniformLocation(glProgram,'uColorA');
-            glUniforms.uColorB = gl.getUniformLocation(glProgram,'uColorB');
             starBuffer = gl.createBuffer();
             uploadGLStars();
             gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
             console.info('[stars] WebGL2 starfield active');
             return true;
         } catch(err){
-            console.warn('[stars] WebGL init failed, reverting to 2D:', err.message);
+            console.warn('[stars] WebGL init failed, fallback 2D:', err.message);
             useWebGL = false; gl = null; glProgram = null;
-            if (starCanvas) starCanvas.style.background = ''; // fallback CSS
             return false;
         }
     }
@@ -324,7 +247,7 @@
         for (let i=0;i<N;i++){
             const s = stars[i];
             const o = i*5;
-            starArray[o] = s.x; starArray[o+1] = s.y; starArray[o+2] = s.z; starArray[o+3] = s.r*(0.9 + Math.random()*0.5); starArray[o+4] = Math.random()*Math.PI*2;
+            starArray[o] = s.x; starArray[o+1] = s.y; starArray[o+2] = s.z; starArray[o+3] = STAR_SIZE_MULT*s.r*(0.85 + Math.random()*0.55); starArray[o+4] = Math.random()*Math.PI*2;
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, starBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, starArray, gl.STATIC_DRAW);
@@ -350,7 +273,6 @@
     let frameSampleCount = 0;
     let frameAccum = 0;
     function adaptQuality(avgMs){
-        if (prefersReduce) return; // no adapt in reduced motion
         if (avgMs > 24 && qualityScale > MIN_QUALITY){
             qualityScale = Math.max(MIN_QUALITY, qualityScale * 0.85);
             rebuildStars();
@@ -365,10 +287,8 @@
         drawNebula(now);
         if (useWebGL) {
             renderGL(now);
-            drawAurora(dt);
             drawConstellations2D();
         } else {
-            drawAurora(dt);
             drawStars2D();
             drawConstellations2D();
         }
@@ -381,20 +301,38 @@
             adaptQuality(avg);
             frameSampleCount = 0; frameAccum = 0;
         }
-        if(!prefersReduce) requestAnimationFrame(frame);
+        requestAnimationFrame(frame);
+    }
+
+    // Shooting star path
+    function drawShooting(){
+        ctx2.clearRect(0,0,w,h);
+        for(const s of shooting){
+            s.x -= s.s;
+            s.y += s.s*0.35;
+            s.life++;
+            const p=1 - s.life/s.max;
+            const g=ctx2.createLinearGradient(s.x,s.y,s.x+s.l,s.y - s.l*0.4);
+            g.addColorStop(0,'rgba(255,255,255,0)');
+            g.addColorStop(0.08,`rgba(255,255,255,${0.55*p})`);
+            g.addColorStop(0.4,`rgba(255,255,255,${0.25*p})`);
+            g.addColorStop(1,'rgba(255,255,255,0)');
+            ctx2.beginPath();
+            ctx2.strokeStyle=g;
+            ctx2.lineWidth=0.7 + 1.1 * p;
+            ctx2.moveTo(s.x,s.y);
+            ctx2.lineTo(s.x + s.l, s.y - s.l*0.4);
+            ctx2.stroke();
+            ctx2.beginPath();
+            ctx2.fillStyle=`rgba(255,255,255,${0.55*p})`;
+            ctx2.arc(s.x,s.y,0.9 + 1.3*p,0,Math.PI*2);
+            ctx2.fill();
+        }
+        for(let i=shooting.length-1;i>=0;i--) if(shooting[i].life>shooting[i].max) shooting.splice(i,1);
     }
 
     /* ---------- Initialization ---------- */
     rebuildStars();
-    // Conditional WebGL init respecting PERF.webgl
-    if (!prefersReduce && PERF.webgl && glCanvas && initGL()) {
-        // WebGL path active
-    }
-    if (prefersReduce){
-        // Single static paint (no animation)
-        drawStars2D();
-        drawConstellations2D();
-    } else {
-        requestAnimationFrame(frame);
-    }
+    if (glCanvas) initGL();
+    requestAnimationFrame(frame);
 })();
