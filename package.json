@@ -15,6 +15,7 @@
     "build:all": "npm run og && npm run build",
     "clean": "rm -rf dist",
     "test": "node tests/test.js && node tests/obsidian-watch.test.js",
+    "test:ci": "node tests/test.js",
     "obsidian:watch": "node scripts/obsidian-watch.mjs"
   },
   "dependencies": {
