@@ -17,9 +17,14 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CI: true
+      NODE_ENV: production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for git last modified dates
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -27,19 +32,52 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install
+      - name: Install dependencies
         run: npm ci
 
       - name: Pre-generate OG images (optional)
         run: npm run og
 
-      - name: Run tests (validation, feeds, incremental, watcher)
-        run: npm test
+      - name: Run core tests (build/incremental/validation)
+        run: node tests/test.js
+
+      - name: Run obsidian watch test (isolated)
+        id: watchtest
+        run: |
+          set -e
+          node tests/obsidian-watch.test.js 2>&1 | tee obsidian-watch.log
+        timeout-minutes: 5
+
+      - name: Debug after obsidian watch test
+        if: always()
+        run: |
+          echo "===== OBSIDIAN WATCH RAW LOG (tail) ====="
+          tail -n 120 obsidian-watch.log || true
+          echo "===== FILE TREE: notes/posts (after tests) ====="
+          find notes/posts -maxdepth 1 -type f -printf '%f\n' | sort || true
+          echo "===== DIST BLOG SLUGS ====="
+          ls -1 dist/blog || true
+          echo "===== PUBLIC OG IMAGES ====="
+          ls -1 public/og || true
+          echo "===== GIT STATUS (should be clean) ====="
+          git status --porcelain || true
+          echo "===== NODE PROCESSES (ensure watcher exited) ====="
+          ps -ef | grep node || true
+          echo "===== DISK USAGE (top level) ====="
+          du -h -d1 . || true
+
+      - name: Upload watch test log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: obsidian-watch-log
+          path: obsidian-watch.log
+          retention-days: 7
 
       - name: Production build (strict links)
         run: npm run build -- --strict-links
 
-      - name: Upload artifact
+      - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
