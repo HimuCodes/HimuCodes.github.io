@@ -34,6 +34,7 @@ ${canonical ? `<meta property=\"og:url\" content=\"${canonical}\">` : ''}
 ${date ? `<meta property=\"article:published_time\" content=\"${date}\">` : ''}
 ${schema}
 <script defer data-domain="himu.me" src="https://plausible.io/js/script.js"></script>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="aa324598-f7c9-476a-a131-83285e17fa6c"></script>
 </head>
 <body data-page="${escapeHtml(title)}" class="${isPost?'is-post':''}">
 <canvas id="glstars" aria-hidden="true"></canvas>
