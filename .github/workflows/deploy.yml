@@ -6,12 +6,16 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,7 +33,7 @@ jobs:
       - name: Pre-generate OG images (optional)
         run: npm run og
 
-      - name: Run tests (validation, feeds, incremental)
+      - name: Run tests (validation, feeds, incremental, watcher)
         run: npm test
 
       - name: Production build (strict links)
@@ -40,5 +44,13 @@ jobs:
         with:
           path: dist
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
       - name: Deploy
+        id: deploy
         uses: actions/deploy-pages@v4
